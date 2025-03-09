@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css"; // Import Quill styles
 
 interface ProductFormProps {
   onSubmit: (product: any) => void;
@@ -64,6 +66,11 @@ export default function ProductForm({
     }
   };
 
+  // Handle rich text editor changes
+  const handleDescriptionChange = (content: string) => {
+    setFormData({ ...formData, description: content });
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFormData({ ...formData, imageUrls: e.target.files });
@@ -97,6 +104,28 @@ export default function ProductForm({
     e.preventDefault();
     onSubmit(formData);
   };
+
+  // Configuration for React Quill editor
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["link"],
+      ["clean"],
+    ],
+  };
+
+  const quillFormats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "link",
+  ];
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto h-full">
@@ -343,14 +372,21 @@ export default function ProductForm({
               <label className="block text-sm font-medium mb-1">
                 Full Description
               </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded"
-                rows={4}
-                placeholder="Enter product description"
-              />
+              {/* React Quill Rich Text Editor */}
+              <div className="border border-gray-300 rounded">
+                <ReactQuill
+                  theme="snow"
+                  value={formData.description}
+                  onChange={handleDescriptionChange}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  placeholder="Enter detailed product description with formatting..."
+                  className="h-48"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Use the toolbar to format text, add lists, and create headings.
+              </p>
             </div>
           </div>
 

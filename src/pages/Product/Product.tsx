@@ -7,7 +7,7 @@ import {
   TableCell,
   TableBody,
 } from "@/components/ui/table";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useEffect, useState } from "react";
@@ -15,6 +15,7 @@ import { getData, postData } from "../../global/server";
 import { logout } from "@/redux/authSlice";
 import SideNavbar from "@/components/SideNavbar";
 import ProductForm from "./ProductForm";
+import ProductDetails from "./ProductDetails";
 
 export default function Product() {
   const [products, setProducts] = useState<any[]>([]);
@@ -28,18 +29,6 @@ export default function Product() {
   const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [addingProduct, setAddingProduct] = useState(false);
-
-  const [newProduct, setNewProduct] = useState<any>({
-    name: "",
-    imageUrls: [],
-    category: "",
-    season: "",
-    color: "",
-    shortDescription: "",
-    description: "",
-    price: "",
-    discountPercentage: "",
-  });
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -352,6 +341,8 @@ export default function Product() {
           </div>
         </main>
       </div>
+
+      {/* Add Product Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 flex items-start justify-center bg-black/50 dark:bg-black/80 z-50 p-4">
           <div className="w-full max-w-4xl h-[calc(100vh-2rem)] overflow-hidden">
@@ -369,51 +360,9 @@ export default function Product() {
         </div>
       )}
 
+      {/* Product Details Modal */}
       {isModalOpen && selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg relative max-w-lg w-full">
-            <button
-              className="absolute top-2 right-2 text-2xl font-bold"
-              onClick={closeModal}
-            >
-              &times;
-            </button>
-            <h3 className="text-lg font-bold mb-4">Product Details</h3>
-            <img
-              src={selectedProduct.imageUrls[0]}
-              alt={selectedProduct.name}
-              className="w-48 h-48 mb-4 object-cover mx-auto rounded"
-            />
-            <p>
-              <strong>Product Name:</strong> {selectedProduct.name}
-            </p>
-            <p>
-              <strong>Category:</strong> {selectedProduct.category.name}
-            </p>
-            <p>
-              <strong>Season:</strong> {selectedProduct.season}
-            </p>
-            <p>
-              <strong>Color:</strong> {selectedProduct.color.name}
-            </p>
-            <p>
-              <strong>Short Description:</strong>{" "}
-              {selectedProduct.shortDescription}
-            </p>
-            <p>
-              <strong>Full Description:</strong> {selectedProduct.description}
-            </p>
-            <p>
-              <strong>Price:</strong> ${selectedProduct.price}
-            </p>
-            <p>
-              <strong>Original Price:</strong> ${selectedProduct.originalPrice}
-            </p>
-            <p>
-              <strong>Discount:</strong> {selectedProduct.discountPercentage}%
-            </p>
-          </div>
-        </div>
+        <ProductDetails product={selectedProduct} onClose={closeModal} />
       )}
     </div>
   );
