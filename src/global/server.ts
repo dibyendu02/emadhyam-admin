@@ -1,8 +1,8 @@
 import axios from "axios";
 
-export const BASE_URL = "https://emadhyam-backend.onrender.com";
+// export const BASE_URL = "https://emadhyam-backend.onrender.com";
 
-// export const BASE_URL = "http://192.168.29.167:5000";
+export const BASE_URL = "http://192.168.164.101:5000";
 // export const BASE_URL = "http://192.168.186.101:5000";
 
 export const getData = async (url: string, token: string | null) => {

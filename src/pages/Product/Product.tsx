@@ -25,6 +25,9 @@ export default function Product() {
   const [colors, setColors] = useState<Color[]>([]);
   const [productTypes, setProductTypes] = useState<string[]>([]);
   const [plantTypes, setPlantTypes] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  const [addingProduct, setAddingProduct] = useState(false);
 
   const [newProduct, setNewProduct] = useState<any>({
     name: "",
@@ -37,37 +40,41 @@ export default function Product() {
     price: "",
     discountPercentage: "",
   });
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const auth = useSelector((state: RootState) => state.auth);
 
   const fetchProducts = async () => {
+    setLoading(true);
     try {
       const response = await getData("/api/product", auth.token);
       setProducts(response || []);
     } catch (err) {
       console.error("Error fetching products:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchCategories = async () => {
     try {
       const response = await getData("/api/category", auth.token);
-      console.log(response);
       setCategories(response || []);
     } catch (err) {
       console.error("Error fetching categories:", err);
     }
   };
+
   const fetchColors = async () => {
     try {
       const response = await getData("/api/colortype", auth.token);
-      console.log(response);
       setColors(response || []);
     } catch (err) {
       console.error("Error fetching colors:", err);
     }
   };
+
   const fetchProductTypes = async () => {
     try {
       const response = await getData("/api/producttype", auth.token);
@@ -76,6 +83,7 @@ export default function Product() {
       console.error("Error fetching product types:", err);
     }
   };
+
   const fetchPlantTypes = async () => {
     try {
       const response = await getData("/api/planttype", auth.token);
@@ -95,13 +103,94 @@ export default function Product() {
     setSelectedProduct(null);
   };
 
-  const handleAddProduct = async () => {
+  const validateForm = (formData: any) => {
+    const errors: { [key: string]: string } = {};
+
+    if (!formData.name || formData.name.trim() === "") {
+      errors.name = "Product name is required";
+    }
+
+    if (!formData.category || formData.category === "") {
+      errors.category = "Category is required";
+    }
+
+    if (!formData.color || formData.color === "") {
+      errors.color = "Color is required";
+    }
+
+    if (!formData.price || formData.price === "") {
+      errors.price = "Price is required";
+    } else if (isNaN(Number(formData.price))) {
+      errors.price = "Price must be a number";
+    }
+
+    return errors;
+  };
+
+  const handleAddProduct = async (formData: any) => {
+    setFormErrors({});
+
+    // Validate form data
+    const errors = validateForm(formData);
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setAddingProduct(true);
+
     try {
-      await postData("/api/product", newProduct, auth.token, "media");
+      // Convert price to a number
+      const productData = new FormData();
+
+      // Add all form fields to FormData
+      Object.keys(formData).forEach((key) => {
+        if (key === "imageUrls" && formData[key] instanceof FileList) {
+          // Handle file uploads
+          for (let i = 0; i < formData[key].length; i++) {
+            productData.append("files", formData[key][i]);
+          }
+        } else if (key === "faqs") {
+          // Special handling for FAQs - convert array to JSON string
+          const faqsJson = JSON.stringify(formData[key]);
+          productData.append("faqs", faqsJson);
+        } else if (key !== "imageUrls") {
+          // Add other fields
+          productData.append(key, formData[key].toString());
+        }
+      });
+
+      // Make the API call
+      await postData("/api/product", productData, auth.token, "media");
       setIsAddModalOpen(false);
       fetchProducts();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error adding product:", err);
+
+      // Handle validation errors from the server
+      if (err.response && err.response.data && err.response.data.details) {
+        const serverErrors = err.response.data.details;
+
+        // Map server errors to form fields
+        const mappedErrors: { [key: string]: string } = {};
+        if (serverErrors.includes("category")) {
+          mappedErrors.category = "Invalid category selected";
+        }
+        if (serverErrors.includes("color")) {
+          mappedErrors.color = "Invalid color selected";
+        }
+        if (serverErrors.includes("name")) {
+          mappedErrors.name = "Product name is required";
+        }
+        if (serverErrors.includes("price")) {
+          mappedErrors.price = "Valid price is required";
+        }
+
+        setFormErrors(mappedErrors);
+      }
+    } finally {
+      setAddingProduct(false);
     }
   };
 
@@ -116,6 +205,75 @@ export default function Product() {
       fetchPlantTypes();
     }
   }, [auth.token]);
+
+  // Skeleton loader component for table rows
+  const TableSkeleton = () => {
+    return (
+      <>
+        {[...Array(5)].map((_, index) => (
+          <TableRow key={`skeleton-${index}`}>
+            <TableCell>
+              <div className="w-16 h-16 bg-gray-200 rounded animate-pulse" />
+            </TableCell>
+            <TableCell>
+              <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+            </TableCell>
+            <TableCell>
+              <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+            </TableCell>
+            <TableCell>
+              <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+            </TableCell>
+            <TableCell>
+              <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+            </TableCell>
+            <TableCell>
+              <div className="h-4 bg-gray-200 rounded w-12 animate-pulse" />
+            </TableCell>
+            <TableCell>
+              <div className="h-4 bg-gray-200 rounded w-12 animate-pulse" />
+            </TableCell>
+            <TableCell>
+              <div className="h-8 bg-gray-200 rounded w-24 animate-pulse" />
+            </TableCell>
+          </TableRow>
+        ))}
+      </>
+    );
+  };
+
+  // Empty state component
+  const EmptyState = () => {
+    return (
+      <TableRow>
+        <TableCell colSpan={8} className="h-80 text-center">
+          <div className="flex flex-col items-center justify-center p-8">
+            <svg
+              className="w-16 h-16 text-gray-400 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+              No products available
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Get started by adding your first product
+            </p>
+            <Button onClick={() => setIsAddModalOpen(true)}>Add Product</Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
@@ -158,31 +316,37 @@ export default function Product() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product._id}>
-                    <TableCell>
-                      <img
-                        src={product.imageUrls[0]}
-                        alt={product.name}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                    </TableCell>
-                    <TableCell>{product.name}</TableCell>
-                    <TableCell>{product.category.name}</TableCell>
-                    <TableCell>{product.season}</TableCell>
-                    <TableCell>{product.color.name}</TableCell>
-                    <TableCell>${product.price}</TableCell>
-                    <TableCell>{product.discountPercentage}%</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleViewMore(product)}
-                      >
-                        View More
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {loading ? (
+                  <TableSkeleton />
+                ) : products.length > 0 ? (
+                  products.map((product) => (
+                    <TableRow key={product._id}>
+                      <TableCell>
+                        <img
+                          src={product.imageUrls[0]}
+                          alt={product.name}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                      </TableCell>
+                      <TableCell>{product.name}</TableCell>
+                      <TableCell>{product.category.name}</TableCell>
+                      <TableCell>{product.season}</TableCell>
+                      <TableCell>{product.color.name}</TableCell>
+                      <TableCell>${product.price}</TableCell>
+                      <TableCell>{product.discountPercentage}%</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleViewMore(product)}
+                        >
+                          View More
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <EmptyState />
+                )}
               </TableBody>
             </Table>
           </div>
@@ -198,6 +362,8 @@ export default function Product() {
               colors={colors}
               productTypes={productTypes}
               plantTypes={plantTypes}
+              errors={formErrors}
+              isSubmitting={addingProduct}
             />
           </div>
         </div>
