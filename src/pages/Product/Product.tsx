@@ -7,11 +7,11 @@ import {
   TableCell,
   TableBody,
 } from "@/components/ui/table";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useEffect, useState } from "react";
-import { getData, postData } from "../../global/server";
+import { getData, postData, putData, deleteData } from "../../global/server";
 import { logout } from "@/redux/authSlice";
 import SideNavbar from "@/components/SideNavbar";
 import ProductForm from "./ProductForm";
@@ -21,6 +21,7 @@ export default function Product() {
   const [products, setProducts] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [colors, setColors] = useState<Color[]>([]);
@@ -28,7 +29,11 @@ export default function Product() {
   const [plantTypes, setPlantTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
-  const [addingProduct, setAddingProduct] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [actionSuccess, setActionSuccess] = useState<{
+    type: string;
+    message: string;
+  } | null>(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -92,6 +97,25 @@ export default function Product() {
     setSelectedProduct(null);
   };
 
+  const handleEditProduct = (product: any) => {
+    console.log("Editing product with data:", product);
+
+    // Create a deep copy to prevent any reference issues
+    const productCopy = JSON.parse(JSON.stringify(product));
+
+    setSelectedProduct(productCopy);
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    // Add a small delay before resetting selected product to avoid flicker
+    setTimeout(() => {
+      setSelectedProduct(null);
+      setFormErrors({});
+    }, 100);
+  };
+
   const validateForm = (formData: any) => {
     const errors: { [key: string]: string } = {};
 
@@ -118,8 +142,6 @@ export default function Product() {
 
   const handleAddProduct = async (formData: any) => {
     setFormErrors({});
-
-    // Validate form data
     const errors = validateForm(formData);
 
     if (Object.keys(errors).length > 0) {
@@ -127,10 +149,9 @@ export default function Product() {
       return;
     }
 
-    setAddingProduct(true);
+    setSubmitting(true);
 
     try {
-      // Convert price to a number
       const productData = new FormData();
 
       // Add all form fields to FormData
@@ -144,7 +165,7 @@ export default function Product() {
           // Special handling for FAQs - convert array to JSON string
           const faqsJson = JSON.stringify(formData[key]);
           productData.append("faqs", faqsJson);
-        } else if (key !== "imageUrls") {
+        } else if (key !== "imageUrls" && key !== "existingImages") {
           // Add other fields
           productData.append(key, formData[key].toString());
         }
@@ -154,32 +175,130 @@ export default function Product() {
       await postData("/api/product", productData, auth.token, "media");
       setIsAddModalOpen(false);
       fetchProducts();
+
+      // Show success message
+      setActionSuccess({
+        type: "add",
+        message: "Product was successfully added!",
+      });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setActionSuccess(null);
+      }, 3000);
     } catch (err: any) {
       console.error("Error adding product:", err);
-
-      // Handle validation errors from the server
-      if (err.response && err.response.data && err.response.data.details) {
-        const serverErrors = err.response.data.details;
-
-        // Map server errors to form fields
-        const mappedErrors: { [key: string]: string } = {};
-        if (serverErrors.includes("category")) {
-          mappedErrors.category = "Invalid category selected";
-        }
-        if (serverErrors.includes("color")) {
-          mappedErrors.color = "Invalid color selected";
-        }
-        if (serverErrors.includes("name")) {
-          mappedErrors.name = "Product name is required";
-        }
-        if (serverErrors.includes("price")) {
-          mappedErrors.price = "Valid price is required";
-        }
-
-        setFormErrors(mappedErrors);
-      }
+      handleApiError(err);
     } finally {
-      setAddingProduct(false);
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateProduct = async (formData: any) => {
+    setFormErrors({});
+    const errors = validateForm(formData);
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const productData = new FormData();
+      const productId = formData._id;
+
+      // Add all form fields to FormData
+      Object.keys(formData).forEach((key) => {
+        if (key === "imageUrls" && formData[key] instanceof FileList) {
+          // Handle file uploads
+          for (let i = 0; i < formData[key].length; i++) {
+            productData.append("files", formData[key][i]);
+          }
+        } else if (key === "faqs") {
+          // Special handling for FAQs - convert array to JSON string
+          const faqsJson = JSON.stringify(formData[key]);
+          productData.append("faqs", faqsJson);
+        } else if (
+          key !== "imageUrls" &&
+          key !== "_id" &&
+          key !== "existingImages"
+        ) {
+          // Add other fields
+          productData.append(key, formData[key].toString());
+        }
+      });
+
+      // Make the API call to update
+      await putData(
+        `/api/product/${productId}`,
+        productData,
+        auth.token,
+        "media"
+      );
+      setIsEditModalOpen(false);
+      fetchProducts();
+
+      // Show success message
+      setActionSuccess({
+        type: "update",
+        message: "Product was successfully updated!",
+      });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setActionSuccess(null);
+      }, 3000);
+    } catch (err: any) {
+      console.error("Error updating product:", err);
+      handleApiError(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteData(`/api/product/${productId}`, auth.token);
+      fetchProducts();
+
+      // Show success message
+      setActionSuccess({
+        type: "delete",
+        message: "Product was successfully deleted!",
+      });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setActionSuccess(null);
+      }, 3000);
+    } catch (err) {
+      console.error("Error deleting product:", err);
+    }
+  };
+
+  const handleApiError = (err: any) => {
+    // Handle validation errors from the server
+    if (err.response && err.response.data && err.response.data.details) {
+      const serverErrors = err.response.data.details;
+
+      // Map server errors to form fields
+      const mappedErrors: { [key: string]: string } = {};
+      if (serverErrors.includes("category")) {
+        mappedErrors.category = "Invalid category selected";
+      }
+      if (serverErrors.includes("color")) {
+        mappedErrors.color = "Invalid color selected";
+      }
+      if (serverErrors.includes("name")) {
+        mappedErrors.name = "Product name is required";
+      }
+      if (serverErrors.includes("price")) {
+        mappedErrors.price = "Valid price is required";
+      }
+
+      setFormErrors(mappedErrors);
     }
   };
 
@@ -283,6 +402,20 @@ export default function Product() {
             Logout
           </Button>
         </header>
+
+        {/* Success message */}
+        {actionSuccess && (
+          <div
+            className={`mx-6 mt-2 p-3 rounded ${
+              actionSuccess.type === "delete"
+                ? "bg-red-100 text-red-800"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            {actionSuccess.message}
+          </div>
+        )}
+
         <div className="mt-2 px-5 flex justify-end">
           <Button className="w-40" onClick={() => setIsAddModalOpen(true)}>
             Add Product
@@ -324,12 +457,22 @@ export default function Product() {
                       <TableCell>${product.price}</TableCell>
                       <TableCell>{product.discountPercentage}%</TableCell>
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleViewMore(product)}
-                        >
-                          View More
-                        </Button>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewMore(product)}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditProduct(product)}
+                          >
+                            Edit
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -354,7 +497,28 @@ export default function Product() {
               productTypes={productTypes}
               plantTypes={plantTypes}
               errors={formErrors}
-              isSubmitting={addingProduct}
+              isSubmitting={submitting}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {isEditModalOpen && selectedProduct && (
+        <div className="fixed inset-0 flex items-start justify-center bg-black/50 dark:bg-black/80 z-50 p-4">
+          <div className="w-full max-w-4xl h-[calc(100vh-2rem)] overflow-hidden">
+            <ProductForm
+              key={`edit-form-${selectedProduct._id}`} // Add this key prop
+              onSubmit={handleUpdateProduct}
+              onCancel={closeEditModal}
+              categories={categories}
+              colors={colors}
+              productTypes={productTypes}
+              plantTypes={plantTypes}
+              errors={formErrors}
+              isSubmitting={submitting}
+              initialData={selectedProduct}
+              isEditMode={true}
             />
           </div>
         </div>
@@ -362,7 +526,12 @@ export default function Product() {
 
       {/* Product Details Modal */}
       {isModalOpen && selectedProduct && (
-        <ProductDetails product={selectedProduct} onClose={closeModal} />
+        <ProductDetails
+          product={selectedProduct}
+          onClose={closeModal}
+          onEdit={handleEditProduct}
+          onDelete={handleDeleteProduct}
+        />
       )}
     </div>
   );

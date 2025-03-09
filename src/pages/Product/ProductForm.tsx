@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, useRef } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // Import Quill styles
 
@@ -12,6 +12,8 @@ interface ProductFormProps {
   plantTypes: any[];
   errors?: { [key: string]: string };
   isSubmitting?: boolean;
+  initialData?: any;
+  isEditMode?: boolean;
 }
 
 export default function ProductForm({
@@ -23,7 +25,15 @@ export default function ProductForm({
   plantTypes,
   errors = {},
   isSubmitting = false,
+  initialData,
+  isEditMode = false,
 }: ProductFormProps) {
+  // Track if the form has been initialized
+  const formInitialized = useRef(false);
+
+  // Add a separate state for Quill content
+  const [quillContent, setQuillContent] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -39,11 +49,13 @@ export default function ProductForm({
     plantType: "",
     isBestseller: false,
     isTrending: false,
+    inStock: true,
     weight: "",
     dimensions: "",
     waterRequirement: "",
     sunlightRequirement: "",
     faqs: [{ question: "", answer: "" }],
+    existingImages: [] as string[],
   });
 
   const handleChange = (
@@ -68,7 +80,8 @@ export default function ProductForm({
 
   // Handle rich text editor changes
   const handleDescriptionChange = (content: string) => {
-    setFormData({ ...formData, description: content });
+    setQuillContent(content);
+    setFormData((prev) => ({ ...prev, description: content }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +115,13 @@ export default function ProductForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+
+    // If in edit mode and there's an ID in initialData, pass it along
+    if (isEditMode && initialData?._id) {
+      onSubmit({ ...formData, _id: initialData._id });
+    } else {
+      onSubmit(formData);
+    }
   };
 
   // Configuration for React Quill editor
@@ -127,10 +146,87 @@ export default function ProductForm({
     "link",
   ];
 
+  // Initialize form with initial data if provided (edit mode)
+  useEffect(() => {
+    if (
+      initialData &&
+      Object.keys(initialData).length > 0 &&
+      !formInitialized.current
+    ) {
+      console.log("Setting form data from initialData:", initialData);
+      formInitialized.current = true;
+
+      try {
+        // Set Quill content separately
+        if (initialData.description) {
+          setQuillContent(initialData.description);
+        }
+
+        // Create a new object with all fields properly mapped
+        const updatedFormData = {
+          name: initialData.name || "",
+          shortDescription: initialData.shortDescription || "",
+          description: initialData.description || "",
+
+          // IDs and references
+          category: initialData.category?._id || initialData.category || "",
+          color: initialData.color?._id || initialData.color || "",
+          productType:
+            initialData.productType?._id || initialData.productType || "",
+          plantType: initialData.plantType?._id || initialData.plantType || "",
+
+          // Selection fields
+          season: initialData.season || "All",
+
+          // Numeric values
+          price: initialData.price?.toString() || "",
+          originalPrice: initialData.originalPrice?.toString() || "",
+          discountPercentage: initialData.discountPercentage?.toString() || "0",
+
+          // Boolean values
+          isBestseller: Boolean(initialData.isBestseller),
+          isTrending: Boolean(initialData.isTrending),
+          inStock:
+            initialData.inStock !== undefined
+              ? Boolean(initialData.inStock)
+              : true,
+
+          // Additional specifications
+          weight: initialData.weight || "",
+          dimensions: initialData.dimensions || "",
+          waterRequirement: initialData.waterRequirement || "",
+          sunlightRequirement: initialData.sunlightRequirement || "",
+
+          // Arrays and complex data
+          imageUrls: null, // Keep null for file input
+          existingImages: Array.isArray(initialData.imageUrls)
+            ? initialData.imageUrls
+            : [],
+          faqs:
+            Array.isArray(initialData.faqs) && initialData.faqs.length > 0
+              ? initialData.faqs
+              : [{ question: "", answer: "" }],
+        };
+
+        console.log("Setting form data to:", updatedFormData);
+        setFormData(updatedFormData);
+      } catch (error) {
+        console.error("Error setting form data:", error);
+      }
+    }
+  }, [initialData]); // Add initialData as dependency
+
+  // Debug effect to monitor form data changes
+  useEffect(() => {
+    console.log("Form data updated:", formData);
+  }, [formData]);
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto h-full">
       <div className="p-6">
-        <h2 className="text-2xl font-bold mb-6">Add New Product</h2>
+        <h2 className="text-2xl font-bold mb-6">
+          {isEditMode ? "Edit Product" : "Add New Product"}
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Basic Information */}
@@ -306,9 +402,32 @@ export default function ProductForm({
                 />
               </div>
 
+              {/* Display existing images in edit mode */}
+              {isEditMode && formData.existingImages.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Current Images
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.existingImages.map((url, index) => (
+                      <div key={index} className="relative w-16 h-16 group">
+                        <img
+                          src={url}
+                          alt={`Product ${index}`}
+                          className="w-full h-full object-cover rounded border"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Uploading new images will add to these existing ones.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Product Images
+                  {isEditMode ? "Add More Images" : "Product Images"}
                 </label>
                 <input
                   type="file"
@@ -318,9 +437,12 @@ export default function ProductForm({
                   multiple
                   accept="image/*"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Maximum of 5 files allowed per upload.
+                </p>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -348,6 +470,20 @@ export default function ProductForm({
                     Trending
                   </label>
                 </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="inStock"
+                    name="inStock"
+                    checked={formData.inStock}
+                    onChange={handleCheckboxChange}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                  <label htmlFor="inStock" className="ml-2">
+                    In Stock
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -372,11 +508,10 @@ export default function ProductForm({
               <label className="block text-sm font-medium mb-1">
                 Full Description
               </label>
-              {/* React Quill Rich Text Editor */}
               <div className="border border-gray-300 rounded">
                 <ReactQuill
                   theme="snow"
-                  value={formData.description}
+                  value={quillContent}
                   onChange={handleDescriptionChange}
                   modules={quillModules}
                   formats={quillFormats}
@@ -529,7 +664,13 @@ export default function ProductForm({
               className="min-w-[100px]"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Saving..." : "Save Product"}
+              {isSubmitting
+                ? isEditMode
+                  ? "Updating..."
+                  : "Saving..."
+                : isEditMode
+                ? "Update Product"
+                : "Save Product"}
             </Button>
           </div>
 

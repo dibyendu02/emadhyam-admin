@@ -5,13 +5,37 @@ import HtmlContent from "./HtmlContent";
 interface ProductDetailsProps {
   product: any;
   onClose: () => void;
+  onEdit: (product: any) => void;
+  onDelete: (productId: string) => void;
 }
 
 const ProductDetails: React.FC<ProductDetailsProps> = ({
   product,
   onClose,
+  onEdit,
+  onDelete,
 }) => {
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = React.useState(false);
+
   if (!product) return null;
+
+  const handleEdit = () => {
+    onEdit(product);
+    onClose();
+  };
+
+  const confirmDelete = () => {
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteConfirmOpen(false);
+  };
+
+  const handleDelete = () => {
+    onDelete(product._id);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black bg-opacity-50">
@@ -216,11 +240,38 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
         )}
 
         {/* Action buttons */}
-        <div className="mt-8 flex justify-end border-t pt-4">
-          <Button onClick={onClose} className="min-w-[100px]">
-            Close
-          </Button>
+        <div className="mt-8 flex justify-between border-t pt-4">
+          <div className="space-x-2">
+            {/* <Button onClick={handleEdit} variant="outline">
+              Edit Product
+            </Button> */}
+            <Button onClick={confirmDelete} variant="destructive">
+              Delete Product
+            </Button>
+          </div>
+          <Button onClick={onClose}>Close</Button>
         </div>
+
+        {/* Delete confirmation modal */}
+        {isDeleteConfirmOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+              <h3 className="text-lg font-bold mb-4">Confirm Delete</h3>
+              <p className="mb-6">
+                Are you sure you want to delete the product "{product.name}"?
+                This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-2">
+                <Button onClick={cancelDelete} variant="outline">
+                  Cancel
+                </Button>
+                <Button onClick={handleDelete} variant="destructive">
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
