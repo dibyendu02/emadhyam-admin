@@ -28,7 +28,7 @@ export default function Login() {
   useEffect(() => {
     if (token && userId) {
       dispatch(updateUser({ token, user: { id: userId } }));
-      navigate("/retailers"); // Redirect the user directly
+      navigate("/orders"); // Redirect the user directly
     }
   }, [token, userId, dispatch, navigate]);
 
@@ -51,7 +51,7 @@ export default function Login() {
       localStorage.setItem("userId", response.user.id);
 
       // Redirect to the users page upon successful login
-      navigate("/retailers");
+      navigate("/orders");
     } catch (err) {
       dispatch(signupFailure(err));
       console.log(err);

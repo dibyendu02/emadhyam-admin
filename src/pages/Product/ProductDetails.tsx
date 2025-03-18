@@ -12,17 +12,17 @@ interface ProductDetailsProps {
 const ProductDetails: React.FC<ProductDetailsProps> = ({
   product,
   onClose,
-  onEdit,
+  // onEdit,
   onDelete,
 }) => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = React.useState(false);
 
   if (!product) return null;
 
-  const handleEdit = () => {
-    onEdit(product);
-    onClose();
-  };
+  // const handleEdit = () => {
+  //   onEdit(product);
+  //   onClose();
+  // };
 
   const confirmDelete = () => {
     setIsDeleteConfirmOpen(true);

@@ -1,6 +1,6 @@
 import { useRef, useEffect, MutableRefObject } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FaUsers, FaTruck, FaBox, FaTags } from "react-icons/fa";
+import { FaTruck, FaBox } from "react-icons/fa";
 import logo from "../assets/logo.png"; // Import the logo
 
 const SideNavbar = () => {
@@ -25,31 +25,22 @@ const SideNavbar = () => {
       <div className="flex h-[80px] items-center border-b border-gray-300 dark:border-gray-700 px-6 bg-white dark:bg-gray-800">
         {/* Logo and Dashboard Text */}
         <Link to="/" className="flex items-center gap-3">
-          <img src={logo} alt="Logo" className="h-12 w-auto" />
+          <img src={logo} alt="Logo" className="h-5 w-auto" />
           <span className="text-lg text-gray-900 dark:text-white">
-            CV Dashboard
+            Dashboard
           </span>
         </Link>
       </div>
       {/* Navigation */}
       <div className="flex-1 overflow-auto py-2 bg-white dark:bg-gray-800">
         <nav className="grid gap-1 px-4 text-md font-medium">
-          {/* Retailers */}
-          <NavLink
-            to="/retailers"
-            icon={<FaUsers className="h-4 w-4" />}
-            isActive={location.pathname === "/retailers"}
-          >
-            Retailers
-          </NavLink>
-
           {/* Suppliers */}
           <NavLink
-            to="/suppliers"
+            to="/orders"
             icon={<FaTruck className="h-4 w-4" />}
-            isActive={location.pathname === "/suppliers"}
+            isActive={location.pathname === "/orders"}
           >
-            Suppliers
+            Orders
           </NavLink>
 
           {/* Products */}
@@ -59,15 +50,6 @@ const SideNavbar = () => {
             isActive={location.pathname === "/products"}
           >
             Products
-          </NavLink>
-
-          {/* Recent Deals */}
-          <NavLink
-            to="/recent-deals"
-            icon={<FaTags className="h-4 w-4" />}
-            isActive={location.pathname === "/recent-deals"}
-          >
-            Recent Deals
           </NavLink>
         </nav>
       </div>
