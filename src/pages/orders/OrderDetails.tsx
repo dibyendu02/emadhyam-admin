@@ -239,12 +239,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
               <h3 className="text-lg font-medium mb-2">Payment Information</h3>
               <div className="border p-3 rounded">
                 <p>
-                  <span className="font-medium">Billing Amount:</span> $
+                  <span className="font-medium">Billing Amount:</span> ₹
                   {order.paymentInfo?.billingAmount.toFixed(2)}
                 </p>
                 {order.paymentInfo?.totalSaved > 0 && (
                   <p>
-                    <span className="font-medium">Total Saved:</span> $
+                    <span className="font-medium">Total Saved:</span> ₹
                     {order.paymentInfo.totalSaved.toFixed(2)}
                   </p>
                 )}

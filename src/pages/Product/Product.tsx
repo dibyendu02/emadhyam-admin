@@ -454,7 +454,7 @@ export default function Product() {
                       <TableCell>{product.category.name}</TableCell>
                       <TableCell>{product.season}</TableCell>
                       <TableCell>{product.color.name}</TableCell>
-                      <TableCell>${product.price}</TableCell>
+                      <TableCell>₹{product.price}</TableCell>
                       <TableCell>{product.discountPercentage}%</TableCell>
                       <TableCell>
                         <div className="flex flex-col sm:flex-row gap-2">

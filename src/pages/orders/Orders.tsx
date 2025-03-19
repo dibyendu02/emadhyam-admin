@@ -17,13 +17,27 @@ import { logout } from "@/redux/authSlice";
 import SideNavbar from "@/components/SideNavbar";
 import OrderDetails from "./OrderDetails";
 import ToastContainer, { useToast } from "@/components/toast/ToastContainer";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Order() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { toasts, addToast, removeToast } = useToast();
+
+  // Filter states
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -33,7 +47,13 @@ export default function Order() {
     setLoading(true);
     try {
       const response = await getData("/api/order", auth.token);
-      setOrders(response || []);
+      // Sort orders in reverse order (newest first)
+      const sortedOrders = (response || []).sort(
+        (a: any, b: any) =>
+          new Date(b.time).getTime() - new Date(a.time).getTime()
+      );
+      setOrders(sortedOrders);
+      setFilteredOrders(sortedOrders);
     } catch (err: any) {
       console.error("Error fetching orders:", err);
 
@@ -96,11 +116,12 @@ export default function Order() {
       await putData(`/api/order/${orderId}`, { status: newStatus }, auth.token);
 
       // Update local state to reflect the change immediately
-      setOrders(
-        orders.map((order) =>
-          order._id === orderId ? { ...order, status: newStatus } : order
-        )
+      const updatedOrders = orders.map((order) =>
+        order._id === orderId ? { ...order, status: newStatus } : order
       );
+
+      setOrders(updatedOrders);
+      applyFilters(updatedOrders, selectedStatuses, paymentFilter);
 
       // Show success toast
       addToast("Order status was successfully updated!", "success");
@@ -119,6 +140,55 @@ export default function Order() {
       // Show error toast
       addToast(errorMessage, "error");
     }
+  };
+
+  // Handle status filter changes
+  const toggleStatusFilter = (status: string) => {
+    setSelectedStatuses((prev) => {
+      const newStatuses = prev.includes(status)
+        ? prev.filter((s) => s !== status)
+        : [...prev, status];
+
+      applyFilters(orders, newStatuses, paymentFilter);
+      return newStatuses;
+    });
+  };
+
+  // Handle payment filter changes
+  const handlePaymentFilterChange = (value: string) => {
+    setPaymentFilter(value);
+    applyFilters(orders, selectedStatuses, value);
+  };
+
+  // Apply all filters to the orders
+  const applyFilters = (
+    allOrders: any[],
+    statuses: string[],
+    paymentStatus: string
+  ) => {
+    let result = [...allOrders];
+
+    // Apply status filters if any are selected
+    if (statuses.length > 0) {
+      result = result.filter((order) => statuses.includes(order.status));
+    }
+
+    // Apply payment filter
+    if (paymentStatus !== "all") {
+      if (paymentStatus === "paid") {
+        result = result.filter(
+          (order) => (order.paymentMethod === "online" && order.isPaid) || false
+        );
+      } else if (paymentStatus === "unpaid") {
+        result = result.filter(
+          (order) =>
+            (order.paymentMethod === "online" && !order.isPaid) ||
+            order.paymentMethod === "cod"
+        );
+      }
+    }
+
+    setFilteredOrders(result);
   };
 
   useEffect(() => {
@@ -210,13 +280,18 @@ export default function Order() {
               No orders available
             </h3>
             <p className="text-sm text-gray-500 mb-4">
-              Orders will appear here once customers place them
+              {selectedStatuses.length > 0 || paymentFilter !== "all"
+                ? "Try changing your filters to see more results"
+                : "Orders will appear here once customers place them"}
             </p>
           </div>
         </TableCell>
       </TableRow>
     );
   };
+
+  // Get all unique order statuses from orders
+  const orderStatuses = [...new Set(orders.map((order) => order.status))];
 
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
@@ -303,6 +378,59 @@ export default function Order() {
             </Card>
           </div>
 
+          {/* Filter Controls */}
+          <div className="bg-white p-4 rounded-lg shadow-sm border mb-4">
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Status Filter */}
+              <div className="flex-1">
+                <h3 className="text-sm font-medium mb-2">Filter by Status</h3>
+                <div className="flex flex-wrap gap-3">
+                  {orderStatuses.map((status) => (
+                    <div key={status} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`status-${status}`}
+                        checked={selectedStatuses.includes(status)}
+                        onCheckedChange={() => toggleStatusFilter(status)}
+                      />
+                      <Label
+                        htmlFor={`status-${status}`}
+                        className={`text-xs font-medium px-2 py-1 rounded ${
+                          status === "delivered"
+                            ? "bg-green-100 text-green-800"
+                            : status === "cancelled"
+                            ? "bg-red-100 text-red-800"
+                            : status === "shipped"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {status}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Filter */}
+              <div className="w-full md:w-64">
+                <h3 className="text-sm font-medium mb-2">Payment Status</h3>
+                <Select
+                  value={paymentFilter}
+                  onValueChange={handlePaymentFilterChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filter by payment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Payments</SelectItem>
+                    <SelectItem value="paid">Paid Only</SelectItem>
+                    <SelectItem value="unpaid">Unpaid Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           {/* Orders Table */}
           <div className="border shadow-sm rounded-lg">
             <Table>
@@ -320,8 +448,8 @@ export default function Order() {
               <TableBody>
                 {loading ? (
                   <TableSkeleton />
-                ) : orders.length > 0 ? (
-                  orders.map((order) => (
+                ) : filteredOrders.length > 0 ? (
+                  filteredOrders.map((order) => (
                     <TableRow key={order._id}>
                       <TableCell className="font-medium">
                         {order._id.slice(-6).toUpperCase()}
@@ -339,7 +467,7 @@ export default function Order() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell>${getOrderTotal(order).toFixed(2)}</TableCell>
+                      <TableCell>₹{getOrderTotal(order).toFixed(2)}</TableCell>
                       <TableCell>
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${

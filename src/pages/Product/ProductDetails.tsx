@@ -125,11 +125,11 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
             </div>
 
             <div className="flex items-end gap-2 mt-2">
-              <span className="text-xl font-bold">${product.price}</span>
+              <span className="text-xl font-bold">₹{product.price}</span>
               {product.originalPrice &&
                 product.originalPrice > product.price && (
                   <span className="text-gray-500 line-through">
-                    ${product.originalPrice}
+                    ₹{product.originalPrice}
                   </span>
                 )}
               {product.discountPercentage > 0 && (
