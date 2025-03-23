@@ -51,6 +51,13 @@ const SideNavbar = () => {
           >
             Products
           </NavLink>
+          <NavLink
+            to="/props"
+            icon={<FaBox className="h-4 w-4" />}
+            isActive={location.pathname === "/props"}
+          >
+            Products Attributes
+          </NavLink>
         </nav>
       </div>
     </div>

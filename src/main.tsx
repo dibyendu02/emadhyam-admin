@@ -7,6 +7,7 @@ import store from "./redux/store";
 import Product from "./pages/Product/Product";
 
 import Order from "./pages/orders/Orders";
+import ProductAttributes from "./pages/productprops/ProductAttributes";
 
 const router = createBrowserRouter([
   {
@@ -19,6 +20,7 @@ const router = createBrowserRouter([
   },
 
   { path: "/orders", element: <Order /> },
+  { path: "/props", element: <ProductAttributes /> },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

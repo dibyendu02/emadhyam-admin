@@ -1,8 +1,8 @@
 import axios from "axios";
 
-export const BASE_URL = "https://emadhyam-backend.onrender.com";
+// export const BASE_URL = "https://emadhyam-backend.onrender.com";
 
-// export const BASE_URL = "http://192.168.1.3:5000";
+export const BASE_URL = "http://192.168.1.3:5000";
 // export const BASE_URL = "http://192.168.186.101:5000";
 
 export const getData = async (url: string, token: string | null) => {
@@ -29,7 +29,7 @@ export const postData = async (
   url: string,
   data: any,
   token: string | null,
-  type: string | null
+  type?: string | null
 ) => {
   let headerObj: any = {};
   if (token) {
