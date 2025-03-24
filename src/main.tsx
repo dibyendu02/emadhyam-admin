@@ -8,6 +8,7 @@ import Product from "./pages/Product/Product";
 
 import Order from "./pages/orders/Orders";
 import ProductAttributes from "./pages/productprops/ProductAttributes";
+import BannerManagement from "./pages/banner/BannerManagement";
 
 const router = createBrowserRouter([
   {
@@ -21,6 +22,7 @@ const router = createBrowserRouter([
 
   { path: "/orders", element: <Order /> },
   { path: "/props", element: <ProductAttributes /> },
+  { path: "/banners", element: <BannerManagement /> },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

@@ -58,6 +58,13 @@ const SideNavbar = () => {
           >
             Products Attributes
           </NavLink>
+          <NavLink
+            to="/banners"
+            icon={<FaBox className="h-4 w-4" />}
+            isActive={location.pathname === "/banners"}
+          >
+            Banners
+          </NavLink>
         </nav>
       </div>
     </div>
