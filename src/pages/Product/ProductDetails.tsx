@@ -12,17 +12,17 @@ interface ProductDetailsProps {
 const ProductDetails: React.FC<ProductDetailsProps> = ({
   product,
   onClose,
-  // onEdit,
+  onEdit,
   onDelete,
 }) => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = React.useState(false);
 
   if (!product) return null;
 
-  // const handleEdit = () => {
-  //   onEdit(product);
-  //   onClose();
-  // };
+  const handleEdit = () => {
+    onEdit(product);
+    onClose();
+  };
 
   const confirmDelete = () => {
     setIsDeleteConfirmOpen(true);
@@ -160,6 +160,16 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
                   Out of Stock
                 </span>
               )}
+              {product.isCodAvailable !== undefined &&
+                (product.isCodAvailable ? (
+                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
+                    COD Available
+                  </span>
+                ) : (
+                  <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded">
+                    No COD
+                  </span>
+                ))}
             </div>
 
             {/* Short Description */}
@@ -217,6 +227,12 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
                 <span>{product.sunlightRequirement}</span>
               </div>
             )}
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-gray-600">Cash on Delivery:</span>
+              <span>
+                {product.isCodAvailable ? "Available" : "Not Available"}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -242,9 +258,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
         {/* Action buttons */}
         <div className="mt-8 flex justify-between border-t pt-4">
           <div className="space-x-2">
-            {/* <Button onClick={handleEdit} variant="outline">
+            <Button onClick={handleEdit} variant="outline">
               Edit Product
-            </Button> */}
+            </Button>
             <Button onClick={confirmDelete} variant="destructive">
               Delete Product
             </Button>

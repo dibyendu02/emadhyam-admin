@@ -50,6 +50,7 @@ export default function ProductForm({
     isBestseller: false,
     isTrending: false,
     inStock: true,
+    isCodAvailable: true, // Added new field with default true
     weight: "",
     dimensions: "",
     waterRequirement: "",
@@ -189,6 +190,10 @@ export default function ProductForm({
           inStock:
             initialData.inStock !== undefined
               ? Boolean(initialData.inStock)
+              : true,
+          isCodAvailable:
+            initialData.isCodAvailable !== undefined
+              ? Boolean(initialData.isCodAvailable)
               : true,
 
           // Additional specifications
@@ -482,6 +487,20 @@ export default function ProductForm({
                   />
                   <label htmlFor="inStock" className="ml-2">
                     In Stock
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="isCodAvailable"
+                    name="isCodAvailable"
+                    checked={formData.isCodAvailable}
+                    onChange={handleCheckboxChange}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                  <label htmlFor="isCodAvailable" className="ml-2">
+                    COD Available
                   </label>
                 </div>
               </div>
