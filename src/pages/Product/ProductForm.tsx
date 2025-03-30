@@ -296,9 +296,7 @@ export default function ProductForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Color <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium mb-1">Color</label>
                 <select
                   name="color"
                   value={formData.color}
@@ -307,7 +305,7 @@ export default function ProductForm({
                     errors.color ? "border-red-500" : "border-gray-300"
                   }`}
                 >
-                  <option value="">Select a color</option>
+                  <option value="">Select a color (optional)</option>
                   {colors.map((color) => (
                     <option key={color._id} value={color._id}>
                       {color.name}
@@ -329,7 +327,7 @@ export default function ProductForm({
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded"
                 >
-                  <option value="">Select a product type</option>
+                  <option value="">Select a product type (optional)</option>
                   {productTypes.map((type: any) => (
                     <option key={type._id} value={type._id}>
                       {type.name}
@@ -348,7 +346,7 @@ export default function ProductForm({
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded"
                 >
-                  <option value="">Select a plant type</option>
+                  <option value="">Select a plant type (optional)</option>
                   {plantTypes.map((type: any) => (
                     <option key={type._id} value={type._id}>
                       {type.name}

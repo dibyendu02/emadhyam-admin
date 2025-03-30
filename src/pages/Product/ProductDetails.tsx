@@ -100,15 +100,22 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
             <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
               <p>
                 <span className="font-medium">Category:</span>{" "}
-                {product.category.name}
+                {product.category?.name || "N/A"}
               </p>
               <p>
-                <span className="font-medium">Season:</span> {product.season}
-              </p>
-              <p>
-                <span className="font-medium">Color:</span> {product.color.name}
+                <span className="font-medium">Season:</span>{" "}
+                {product.season || "All"}
               </p>
 
+              {/* Only show color if it exists */}
+              {product.color && (
+                <p>
+                  <span className="font-medium">Color:</span>{" "}
+                  {product.color.name}
+                </p>
+              )}
+
+              {/* Only show plant type if it exists */}
               {product.plantType && (
                 <p>
                   <span className="font-medium">Plant Type:</span>{" "}

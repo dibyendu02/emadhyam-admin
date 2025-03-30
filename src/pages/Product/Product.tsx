@@ -127,9 +127,7 @@ export default function Product() {
       errors.category = "Category is required";
     }
 
-    if (!formData.color || formData.color === "") {
-      errors.color = "Color is required";
-    }
+    // Remove color validation as it's no longer mandatory
 
     if (!formData.price || formData.price === "") {
       errors.price = "Price is required";
@@ -166,8 +164,10 @@ export default function Product() {
           const faqsJson = JSON.stringify(formData[key]);
           productData.append("faqs", faqsJson);
         } else if (key !== "imageUrls" && key !== "existingImages") {
-          // Add other fields
-          productData.append(key, formData[key].toString());
+          // Add other fields - only add if they have a value
+          if (formData[key] !== "" && formData[key] !== null) {
+            productData.append(key, formData[key].toString());
+          }
         }
       });
 
@@ -225,7 +225,7 @@ export default function Product() {
           key !== "_id" &&
           key !== "existingImages"
         ) {
-          // Add other fields
+          // Always include the fields even if empty, to allow clearing values
           productData.append(key, formData[key].toString());
         }
       });
@@ -451,11 +451,11 @@ export default function Product() {
                         />
                       </TableCell>
                       <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.category.name}</TableCell>
+                      <TableCell>{product.category?.name || "N/A"}</TableCell>
                       <TableCell>{product.season}</TableCell>
-                      <TableCell>{product.color.name}</TableCell>
+                      <TableCell>{product.color?.name || "N/A"}</TableCell>
                       <TableCell>₹{product.price}</TableCell>
-                      <TableCell>{product.discountPercentage}%</TableCell>
+                      <TableCell>{product.discountPercentage || 0}%</TableCell>
                       <TableCell>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Button
