@@ -50,7 +50,7 @@ export default function ProductForm({
     isBestseller: false,
     isTrending: false,
     inStock: true,
-    isCodAvailable: true, // Added new field with default true
+    isCodAvailable: true,
     weight: "",
     dimensions: "",
     waterRequirement: "",
@@ -112,6 +112,14 @@ export default function ProductForm({
   const removeFaq = (index: number) => {
     const updatedFaqs = formData.faqs.filter((_, i) => i !== index);
     setFormData({ ...formData, faqs: updatedFaqs });
+  };
+
+  // New function to handle removing existing images
+  const removeExistingImage = (indexToRemove: number) => {
+    const updatedImages = formData.existingImages.filter(
+      (_, index) => index !== indexToRemove
+    );
+    setFormData({ ...formData, existingImages: updatedImages });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -405,7 +413,7 @@ export default function ProductForm({
                 />
               </div>
 
-              {/* Display existing images in edit mode */}
+              {/* Display existing images with delete functionality in edit mode */}
               {isEditMode && formData.existingImages.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -419,11 +427,20 @@ export default function ProductForm({
                           alt={`Product ${index}`}
                           className="w-full h-full object-cover rounded border"
                         />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                          title="Remove image"
+                        >
+                          ×
+                        </button>
                       </div>
                     ))}
                   </div>
                   <p className="text-xs text-gray-500">
-                    Uploading new images will add to these existing ones.
+                    Click the X to remove images. Uploading new images will add
+                    to the remaining ones.
                   </p>
                 </div>
               )}
@@ -505,6 +522,7 @@ export default function ProductForm({
             </div>
           </div>
 
+          {/* Rest of the form remains the same */}
           {/* Descriptions */}
           <div className="space-y-4">
             <div>

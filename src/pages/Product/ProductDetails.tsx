@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import HtmlContent from "./HtmlContent";
 
@@ -15,7 +15,10 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = React.useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
 
   if (!product) return null;
 
@@ -35,6 +38,31 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
   const handleDelete = () => {
     onDelete(product._id);
     onClose();
+  };
+
+  const changeMainImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
+
+  const openImageModal = (index: number) => {
+    setModalImageIndex(index);
+    setShowImageModal(true);
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+  };
+
+  const navigateImage = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setModalImageIndex((prevIndex) =>
+        prevIndex === 0 ? product.imageUrls.length - 1 : prevIndex - 1
+      );
+    } else {
+      setModalImageIndex((prevIndex) =>
+        prevIndex === product.imageUrls.length - 1 ? 0 : prevIndex + 1
+      );
+    }
   };
 
   return (
@@ -64,31 +92,37 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6">
           {/* Product Image Section */}
           <div className="flex flex-col items-center space-y-4">
-            <div className="w-full aspect-square rounded-lg overflow-hidden border">
+            <div
+              className="w-full aspect-square rounded-lg overflow-hidden border cursor-pointer"
+              onClick={() => openImageModal(currentImageIndex)}
+            >
               <img
-                src={product.imageUrls[0]}
+                src={product.imageUrls[currentImageIndex]}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform hover:scale-105"
               />
             </div>
 
-            {/* Additional images (if any) */}
+            {/* Additional images gallery */}
             {product.imageUrls.length > 1 && (
               <div className="flex flex-wrap gap-2 justify-center">
-                {product.imageUrls
-                  .slice(1)
-                  .map((url: string, index: number) => (
-                    <div
-                      key={index}
-                      className="w-16 h-16 rounded overflow-hidden border"
-                    >
-                      <img
-                        src={url}
-                        alt={`${product.name} - ${index + 2}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
+                {product.imageUrls.map((url: string, index: number) => (
+                  <div
+                    key={index}
+                    className={`w-16 h-16 rounded overflow-hidden border cursor-pointer transition-all duration-200 ${
+                      currentImageIndex === index
+                        ? "ring-2 ring-blue-500"
+                        : "opacity-70 hover:opacity-100"
+                    }`}
+                    onClick={() => changeMainImage(index)}
+                  >
+                    <img
+                      src={url}
+                      alt={`${product.name} - ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -292,6 +326,90 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
                   Delete
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Image Modal for enlarged view */}
+        {showImageModal && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-90">
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              {/* Close button */}
+              <button
+                className="absolute top-4 right-4 text-white hover:text-gray-300 z-[80]"
+                onClick={closeImageModal}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+
+              {/* Previous button */}
+              {product.imageUrls.length > 1 && (
+                <button
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-[80]"
+                  onClick={() => navigateImage("prev")}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="40"
+                    height="40"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+              )}
+
+              {/* Next button */}
+              {product.imageUrls.length > 1 && (
+                <button
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-[80]"
+                  onClick={() => navigateImage("next")}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="40"
+                    height="40"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              )}
+
+              {/* Image counter */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">
+                {modalImageIndex + 1} / {product.imageUrls.length}
+              </div>
+
+              {/* Image */}
+              <img
+                src={product.imageUrls[modalImageIndex]}
+                alt={`${product.name} enlarged view`}
+                className="max-h-[90vh] max-w-[90vw] object-contain"
+              />
             </div>
           </div>
         )}

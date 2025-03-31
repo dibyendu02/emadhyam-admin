@@ -220,11 +220,11 @@ export default function Product() {
           // Special handling for FAQs - convert array to JSON string
           const faqsJson = JSON.stringify(formData[key]);
           productData.append("faqs", faqsJson);
-        } else if (
-          key !== "imageUrls" &&
-          key !== "_id" &&
-          key !== "existingImages"
-        ) {
+        } else if (key === "existingImages") {
+          // Handle existing images that may have been modified (some deleted)
+          const existingImagesJson = JSON.stringify(formData[key]);
+          productData.append("existingImages", existingImagesJson);
+        } else if (key !== "imageUrls" && key !== "_id") {
           // Always include the fields even if empty, to allow clearing values
           productData.append(key, formData[key].toString());
         }
